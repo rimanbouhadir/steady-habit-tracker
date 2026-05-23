@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Steady - Your Habit Companion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 Steady</h1>
+        <p>Track progress, not perfection</p>
+    </div>
+
+    <!-- Energy Check -->
+    <div class="energy-bar">
+        <span class="energy-label">Energy:</span>
+        <input type="range" class="energy-slider" id="energySlider" min="1" max="10" value="7">
+        <span class="energy-value" id="energyValue">7</span>
+        <button class="btn btn-complete" onclick="logEnergy()" style="min-width: auto; padding: 8px 15px;">Log</button>
+    </div>
+
+    <!-- Crash Cushion -->
+    <div class="cushion-suggestion" id="cushionBox" style="display: none;">
+        <h3>⚡ Low Energy Mode</h3>
+        <p id="cushionText">Your energy is low. Try a micro-version instead of skipping.</p>
+        <button class="btn btn-partial" onclick="applyCushion()">Do Micro Version</button>
+    </div>
+
+    <!-- Habits Grid -->
+    <div class="habits-grid" id="habitsGrid">
+        Loading...
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showView('habits')">
+            <span class="nav-icon">🔥</span>
+            <span>Habits</span>
+        </div>
+        <div class="nav-item" onclick="showView('patterns')">
+            <span class="nav-icon">📊</span>
+            <span>Patterns</span>
+        </div>
+        <div class="nav-item" onclick="showView('triggers')">
+            <span class="nav-icon">📝</span>
+            <span>Triggers</span>
+        </div>
+        <div class="nav-item" onclick="exportData()">
+            <span class="nav-icon">💾</span>
+            <span>Export</span>
+        </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div class="modal-overlay" id="logModal">
+        <div class="modal">
+            <h2>Log Activity</h2>
+            <input type="hidden" id="logHabitId">
+            <div class="form-group">
+                <label>How did it go?</label>
+                <div class="action-buttons" style="margin-top: 10px;">
+                    <button class="btn btn-complete" onclick="submitLog('complete')">✅ Complete</button>
+                    <button class="btn btn-partial" onclick="submitLog('partial')">🔄 Partial</button>
+                    <button class="btn btn-break" onclick="submitLog('break')">❌ Break</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Note (optional)</label>
+                <textarea id="logNote" placeholder="How are you feeling? What happened?"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal('logModal')" style="background: var(--bg-light); color: var(--text);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trigger Modal -->
+    <div class="modal-overlay" id="triggerModal">
+        <div class="modal">
+            <h2>Log Trigger</h2>
+            <input type="hidden" id="triggerHabitId">
+            <div class="form-group">
+                <label>What happened? (Trigger)</label>
+                <input type="text" id="triggerEvent" placeholder="e.g., After argument, stress at work...">
+            </div>
+            <div class="form-group">
+                <label>Mood</label>
+                <select id="triggerMood">
+                    <option value="">Select mood...</option>
+                    <option value="stressed">😰 Stressed</option>
+                    <option value="bored">😑 Bored</option>
+                    <option value="anxious">😟 Anxious</option>
+                    <option value="happy">😊 Happy</option>
+                    <option value="tired">😴 Tired</option>
+                    <option value="angry">😠 Angry</option>
+                    <option value="lonely">😔 Lonely</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="triggerLocation" placeholder="e.g., Home, Work, Car...">
+            </div>
+            <div class="form-group">
+                <label>Intensity (1-5)</label>
+                <div class="intensity-options">
+                    <button class="intensity-btn" data-value="1" onclick="selectIntensity(1)">1</button>
+                    <button class="intensity-btn" data-value="2" onclick="selectIntensity(2)">2</button>
+                    <button class="intensity-btn" data-value="3" onclick="selectIntensity(3)">3</button>
+                    <button class="intensity-btn" data-value="4" onclick="selectIntensity(4)">4</button>
+                    <button class="intensity-btn" data-value="5" onclick="selectIntensity(5)">5</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>What did you do instead? (Coping)</label>
+                <input type="text" id="triggerCoping" placeholder="e.g., Deep breathing, walked away...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-complete" onclick="submitTrigger()">Save Trigger</button>
+                <button class="btn" onclick="closeModal('triggerModal')" style="background: var(--bg-light); color: var(--text);">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patterns View -->
+    <div id="patternsView" style="display: none; padding: 15px;">
+        <h2 style="margin-bottom: 20px;">📊 Your Patterns</h2>
+        <div id="patternsContent">
+            <p style="color: var(--text-muted); text-align: center;">Select a habit to see patterns</p>
+        </div>
+    </div>
+
+    <!-- Triggers List View -->
+    <div id="triggersView" style="display: none; padding: 15px;">
+        <h2 style="margin-bottom: 20px;">📝 Trigger Journal</h2>
+        <div id="triggersContent">
+            <p style="color: var(--text-muted); text-align: center;">Select a habit to see triggers</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
